@@ -272,7 +272,7 @@ export const AutocompleteDropdown = memo(
     /*            Support Android animtation to open and close dropdown           */
     /* -------------------------------------------------------------------------- */
     const containerHeight = useRef(new Animated.Value(inputHeight)).current;
-    const dataSetLength = dataSet.length;
+    const dataSetLength = dataSet?.length ?? 0;
 
     const showDropdown = () => {
       // Will change containerHeight value in 300 milliseconds
