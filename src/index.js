@@ -10,7 +10,7 @@ import React, {
   useRef,
   useState
 } from 'react'
-import { Dimensions, Keyboard, LogBox, Platform, TextInput, TouchableOpacity, View } from 'react-native'
+import { Animated, Dimensions, Keyboard, LogBox, Platform, TextInput, TouchableOpacity, View } from 'react-native'
 import { Dropdown } from './Dropdown'
 import { moderateScale, ScaledSheet } from 'react-native-size-matters'
 import { NothingFound } from './NothingFound'
@@ -267,10 +267,53 @@ export const AutocompleteDropdown = memo(
       },
       [props.closeOnSubmit, props.onSubmit]
     )
+    
+    /* -------------------------------------------------------------------------- */
+    /*            Support Android animtation to open and close dropdown           */
+    /* -------------------------------------------------------------------------- */
+    const containerHeight = useRef(new Animated.Value(inputHeight)).current;
+    const dataSetLength = dataSet.length;
+
+    const showDropdown = () => {
+      // Will change containerHeight value in 300 milliseconds
+      Animated.spring(containerHeight, {
+        toValue: inputHeight + Math.min(suggestionsListMaxHeight, dataSetLength * 50),
+        useNativeDriver: false,
+      }).start();
+    };
+
+    const hideDropdown = () => {
+      // Will change containerHeight value in 300 milliseconds
+      Animated.spring(containerHeight, {
+        toValue: inputHeight,
+        useNativeDriver: false,
+      }).start();
+    };
+
+    useEffect(() => {
+      // Only fix scroll issue on Android. iOS worked as expected
+      if (Platform.OS != 'android') {
+        return
+      }
+
+      if (isOpened) {
+        showDropdown()
+      } else {
+        hideDropdown()
+      }
+    },[isOpened]);
+
+    /* -------------------------------------------------------------------------- */
+    /*                                End animation                               */
+    /* -------------------------------------------------------------------------- */
 
     return (
-      <View style={[styles.container, props.containerStyle, Platform.select({ ios: { zIndex: 1 } })]}>
-        {/* it's necessary use onLayout here for Androd (bug?) */}
+      <Animated.View style={[styles.container, props.containerStyle, Platform.select({ 
+            ios: { zIndex: 1 }, 
+            android: { height: containerHeight }
+          })
+        ]}>
+        {/* it's necessary use onLayout here for Android (bug?) */}
         <View
           ref={containerRef}
           onLayout={_ => {}}
@@ -320,7 +363,7 @@ export const AutocompleteDropdown = memo(
             }}
           />
         )}
-      </View>
+      </Animated.View>
     )
   })
 )
@@ -364,7 +407,7 @@ AutocompleteDropdown.propTypes = {
 
 const styles = ScaledSheet.create({
   container: {
-    marginVertical: 2
+    marginVertical: 2,
   },
   inputContainerStyle: {
     position: 'relative',
